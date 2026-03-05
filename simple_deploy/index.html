@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 100MVP 經理人徵選</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Lucide Icons (React) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide-react@latest"></script>
+
+  <!-- Error Handler -->
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      document.body.innerHTML = '<div style="color: #ff5555; padding: 20px; font-family: monospace; background: #1a1a1a; min-height: 100vh;">' +
+        '<h1 style="font-size: 24px; margin-bottom: 10px;">⚠️ 發生錯誤 (Error)</h1>' +
+        '<p style="font-size: 16px; line-height: 1.5;">' + message + '</p>' +
+        '<p style="color: #888; font-size: 14px; margin-top: 10px;">Location: ' + source + ':' + lineno + '</p>' +
+        '</div>';
+    };
+  </script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'mvp-black': '#050505',
+            'mvp-charcoal': '#121212',
+            'mvp-gold': '#D4AF37',
+            'mvp-gold-light': '#F3E5AB',
+            'mvp-gold-dim': '#8A7E57',
+            'mvp-red': '#8A1C1C',
+            'mvp-red-bright': '#C92A2A',
+            'mvp-gray': '#2A2A2A',
+            'mvp-silver': '#E5E5E5',
+          },
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            serif: ['"Playfair Display"', 'ui-serif', 'serif'],
+          },
+          boxShadow: {
+            'glow-gold': '0 0 30px rgba(212, 175, 55, 0.15)',
+            'glow-red': '0 0 30px rgba(138, 28, 28, 0.2)',
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.8s ease-out',
+            'slide-up': 'slideUp 0.8s ease-out',
+            'slide-in-right': 'slideInRight 0.5s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            slideInRight: {
+              '0%': { transform: 'translateX(100%)' },
+              '100%': { transform: 'translateX(0)' },
+            },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #050505; }
+    ::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #D4AF37; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-mvp-black text-white">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+    
+    // Lucide Icons Fallback Mechanism
+    // Try to find the correct global variable for Lucide React icons
+    // Note: lucide-react UMD usually exports as 'lucide' or 'lucideReact' depending on version
+    const LucideIcons = window.lucide || window.lucideReact || {};
+    
+    console.log('Lucide Icons loaded:', LucideIcons);
+
+    const { Menu, X, Trophy, ArrowRight, Star, Leaf, Cpu, Box, TrendingUp, Users, ExternalLink, FileText, CheckCircle, HelpCircle, CreditCard, ChevronDown, ChevronUp, Search } = LucideIcons;
+
+    // Check if icons loaded successfully
+    if (!Menu) {
+      console.error('Lucide Icons failed to load. Available globals:', { lucide: window.lucide, lucideReact: window.lucideReact });
+      throw new Error('Lucide Icons library failed to load. Please check your internet connection.');
+    }
+
+    // --- Constants ---
+    const DEADLINE_DATE = new Date('2025-08-08T23:59:59');
+    
+    const CATEGORIES_DESC = [
+      { type: 'sustainability', title: '永續經營', desc: 'ESG、環境保護、社會責任、公司治理', icon: 'Leaf' },
+      { type: 'digital_innovation', title: '數位創新', desc: '新科技應用、數位工具導入、流程升級', icon: 'Cpu' },
+      { type: 'product_service', title: '產品服務', desc: '產品研發、服務設計、使用者體驗優化', icon: 'Box' },
+      { type: 'marketing_sales', title: '行銷業務', desc: '品牌推廣、市場拓展、業績成長策略', icon: 'TrendingUp' },
+      { type: 'org_governance', title: '組織治理', desc: '人才培育、組織變革、企業文化塑造', icon: 'Users' }
+    ];
+
+    const TIMELINE_EVENTS = [
+      { date: '2025.05.01', title: '徵件開跑', description: '線上報名系統正式開放', status: 'past' },
+      { date: '2025.08.08', title: '報名截止', description: '需完成線上資料填寫與繳費', status: 'current' },
+      { date: '2025.09.15', title: '初審評選', description: '資格審查與書面初評', status: 'future' },
+      { date: '2025.10.20', title: '決審面談', description: '入圍者進行口頭簡報', status: 'future' },
+      { date: '2025.12.01', title: '頒獎典禮', description: '榮耀時刻與百大經理人交流', status: 'future' },
+    ];
+
+    const MOCK_MANAGERS = [
+      { id: 1, name: '王大明', company: '鼎鑫金控', title: 'ESG 執行長', category: 'sustainability', isSuper: true, shortPerformance: '推動綠色金融，達成集團 15% 節能成效', paid: true, image: 'https://picsum.photos/400/400?random=1', year: 2026, articleUrl: '#' },
+      { id: 2, name: '李小華', company: '全匯零售集團', title: '集團資訊長', category: 'digital_innovation', isSuper: false, shortPerformance: '導入生成式 AI 客服，降低 40% 人力成本', paid: true, image: 'https://picsum.photos/400/400?random=2', year: 2026, articleUrl: '#' },
+      { id: 3, name: '張事業', company: '宏大精密製造', title: '研發總監', category: 'product_service', isSuper: false, shortPerformance: '開發超耐磨合金，市占率提升 15%', paid: false, image: 'https://picsum.photos/400/400?random=3', year: 2026, articleUrl: '#' },
+      { id: 4, name: '林銷售', company: '雲端科技', title: '業務副總', category: 'marketing_sales', isSuper: true, shortPerformance: 'OMO 整合行銷，品牌流量翻倍成長', paid: true, image: 'https://picsum.photos/400/400?random=4', year: 2026, articleUrl: '#' },
+      { id: 5, name: '趙管理', company: '全球物流', title: '人資長', category: 'org_governance', isSuper: false, shortPerformance: '推動多元共融 (DEI)，留職率提升 20%', paid: true, image: 'https://picsum.photos/400/400?random=5', year: 2026, articleUrl: '#' },
+      { id: 101, name: '陳經典', company: '傳奇食品', title: '總經理', category: 'marketing_sales', isSuper: true, shortPerformance: '老品牌年輕化，營收逆勢成長 30%', paid: true, image: 'https://picsum.photos/400/400?random=101', year: 2025, articleUrl: '#' },
+      { id: 102, name: '林科技', company: '未來半導體', title: '技術長', category: 'digital_innovation', isSuper: true, shortPerformance: '3奈米製程良率突破關鍵', paid: true, image: '', year: 2025, articleUrl: '#' },
+      { id: 107, name: '張行銷', company: '創新電商', title: '行銷總監', category: 'marketing_sales', isSuper: false, shortPerformance: '雙11業績成長200%', paid: true, image: 'https://picsum.photos/400/400?random=107', year: 2025, articleUrl: '#' },
+      { id: 108, name: '李產品', company: '優質生活', title: '產品經理', category: 'product_service', isSuper: false, shortPerformance: '新產品線市占率第一', paid: true, image: '', year: 2025, articleUrl: '#' },
+      { id: 109, name: '王治理', company: '永續金控', title: '風控長', category: 'org_governance', isSuper: true, shortPerformance: '導入AI風控模型，降低壞帳率', paid: true, image: 'https://picsum.photos/400/400?random=109', year: 2025, articleUrl: '#' },
+      { id: 103, name: '黃永續', company: '綠能光電', title: '永續長', category: 'sustainability', isSuper: false, shortPerformance: '全廠區 100% 再生能源達成', paid: true, image: 'https://picsum.photos/400/400?random=103', year: 2024, articleUrl: '#' },
+      { id: 104, name: '張服務', company: '頂級酒店', title: '營運總監', category: 'product_service', isSuper: true, shortPerformance: '獲選全球百大飯店，服務滿意度創新高', paid: true, image: '', year: 2023, articleUrl: '#' },
+      { id: 105, name: '劉治理', company: '幸福企業', title: '人資副總', category: 'org_governance', isSuper: false, shortPerformance: '打造遠距辦公新典範，員工滿意度 95%', paid: true, image: 'https://picsum.photos/400/400?random=105', year: 2022, articleUrl: '#' },
+      { id: 106, name: '王傳奇', company: '百年傳產', title: '董事長', category: 'org_governance', isSuper: true, shortPerformance: '帶領集團成功轉型，市值翻倍', paid: true, image: 'https://picsum.photos/400/400?random=106', year: 2008, articleUrl: '#' }
+    ];
+
+    const FAQ_ITEMS = [
+      { q: '報名資格是什麼？', a: '凡於 2024-2025 年間，在企業或組織中擔任管理職務，並有具體績效者皆可報名。' },
+      { q: '報名費用包含哪些項目？', a: '費用 $6,000 包含：審查作業費、頒獎典禮入場券一張、經理人月刊一年份、專屬數位證書。' },
+      { q: '可以推薦他人報名嗎？', a: '可以，我們歡迎企業內部推薦或自我推薦。請在報名表中註明推薦人資訊。' },
+      { q: '什麼時候會公佈得獎名單？', a: '預計於 2026 年 11 月中旬公佈，並同步寄發得獎通知。' }
+    ];
+
+    // --- Components ---
+    const Navbar = ({ activePage, setPage }) => {
+      const [isScrolled, setIsScrolled] = useState(false);
+      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+      useEffect(() => {
+        const handleScroll = () => setIsScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+      }, []);
+
+      const navItems = [
+        { id: 'home', label: '首頁' },
+        { id: 'apply', label: '立即報名' },
+        { id: 'about', label: '關於 100 MVP' },
+        { id: 'hall', label: '歷屆得主' },
+      ];
+
+      return (
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+          isScrolled 
+            ? 'bg-mvp-black/80 backdrop-blur-md border-b border-white/5 py-4' 
+            : 'bg-transparent py-8'
+        }`}>
+          <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+            <div className="w-40 h-10 flex items-center cursor-pointer" onClick={() => setPage('home')}>
+              <div className="text-white/20 text-xs border border-white/10 px-2 py-1 rounded">
+                [LOGO AREA]
+              </div>
+            </div>
+            <div className="hidden md:flex items-center space-x-10">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setPage(item.id)}
+                  className={`text-sm tracking-[0.15em] uppercase transition-all duration-300 relative group ${
+                    activePage === item.id ? 'text-mvp-gold font-medium' : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {item.label}
+                  <span className={`absolute -bottom-2 left-0 w-full h-[1px] bg-mvp-gold transform origin-left transition-transform duration-300 ${
+                    activePage === item.id ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-50'
+                  }`}></span>
+                </button>
+              ))}
+            </div>
+            <button className="md:hidden text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? <X /> : <Menu />}
+            </button>
+          </div>
+          {mobileMenuOpen && (
+            <div className="md:hidden bg-mvp-charcoal border-t border-white/10 absolute w-full left-0 top-full p-6 flex flex-col space-y-6 shadow-2xl">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => { setPage(item.id); setMobileMenuOpen(false); }}
+                  className={`text-left text-lg tracking-widest ${activePage === item.id ? 'text-mvp-gold' : 'text-gray-300'}`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </nav>
+      );
+    };
+
+    const Footer = () => (
+      <footer className="bg-[#1a1a1a] text-gray-400 py-16 border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
+            <div>
+              <h3 className="text-white text-lg font-bold mb-6">聯絡我們</h3>
+              <div className="space-y-2 text-sm">
+                <p>100 MVP 經理人徵選工作小組</p>
+                <p>電話：02-8773-9808 #238 葉小姐</p>
+                <p>信箱：mvp@bnext.com.tw</p>
+                <p>服務時間：週一至週五 10:00-17:00</p>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
+            <p>© 2026 Business Next Media Corp. All Rights Reserved.</p>
+          </div>
+        </div>
+      </footer>
+    );
+
+    const SectionTitle = ({ title, subtitle }) => (
+      <div className="mb-16 text-center" data-aos="fade-up">
+        {subtitle && <h3 className="text-mvp-gold tracking-[0.3em] text-xs font-bold uppercase mb-4 opacity-80">{subtitle}</h3>}
+        <h2 className="text-3xl md:text-5xl font-serif text-white relative inline-block">{title}</h2>
+        <div className="w-12 h-[1px] bg-mvp-gold/50 mx-auto mt-6"></div>
+      </div>
+    );
+
+    const HomePage = ({ setPage }) => {
+      const [timeLeft, setTimeLeft] = useState('');
+      useEffect(() => {
+        const timer = setInterval(() => {
+          const now = new Date();
+          const diff = DEADLINE_DATE.getTime() - now.getTime();
+          if (diff <= 0) { setTimeLeft('已截止'); return; }
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          setTimeLeft(`${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+        }, 1000);
+        return () => clearInterval(timer);
+      }, []);
+
+      const getIcon = (iconName) => {
+        switch (iconName) {
+          case 'Leaf': return <Leaf size={24} />;
+          case 'Cpu': return <Cpu size={24} />;
+          case 'Box': return <Box size={24} />;
+          case 'TrendingUp': return <TrendingUp size={24} />;
+          case 'Users': return <Users size={24} />;
+          default: return <Star size={24} />;
+        }
+      };
+
+      return (
+        <div className="animate-fade-in">
+          <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-mvp-black">
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+              <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-mvp-gold/5 rounded-full blur-[100px]"></div>
+              <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-mvp-red/5 rounded-full blur-[120px]"></div>
+            </div>
+            <div className="relative z-10 text-center px-6 max-w-5xl mx-auto mt-20">
+              <div className="mb-8 inline-flex items-center gap-3 border border-white/10 px-6 py-2 rounded-full bg-white/5 backdrop-blur-sm">
+                <div className="w-2 h-2 bg-mvp-gold rounded-full animate-pulse"></div>
+                <span className="text-gray-300 text-xs tracking-[0.2em] font-medium">ENTRIES OPEN UNTIL AUGUST 08</span>
+              </div>
+              <h1 className="text-5xl md:text-8xl font-serif font-medium text-white mb-8 leading-[1.1] tracking-tight">
+                The Power to <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-mvp-gold via-white to-mvp-gold">Change the World</span>
+              </h1>
+              <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-light leading-relaxed tracking-wide">
+                經理人是改變世界最有力量的一群人。第 19 屆 100MVP 經理人徵件正式啟動，尋找在變動時代中，展現卓越領導力的 MVP。
+              </p>
+              <div className="flex flex-col md:flex-row gap-6 justify-center items-center mb-16">
+                <button onClick={() => setPage('apply')} className="group relative px-12 py-4 bg-white text-black hover:bg-mvp-gold transition-colors duration-500 font-medium tracking-[0.15em] text-sm overflow-hidden">
+                  <span className="relative z-10 flex items-center gap-2">APPLY NOW <ArrowRight size={16} /></span>
+                </button>
+                <div className="text-left border-l border-white/20 pl-6">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] mb-1">DEADLINE COUNTDOWN</p>
+                  <p className="text-xl font-mono text-mvp-gold">{timeLeft}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+          
+          <section id="timeline" className="py-32 bg-mvp-black relative overflow-hidden">
+            <div className="max-w-7xl mx-auto px-6">
+              <SectionTitle title="徵件時程" subtitle="TIMELINE" />
+              <div className="relative mt-20">
+                <div className="hidden md:block absolute top-1/2 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-y-1/2"></div>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-12">
+                  {TIMELINE_EVENTS.map((event, idx) => (
+                    <div key={idx} className="relative z-10 group text-center md:text-left">
+                      <div className={`w-3 h-3 rounded-full mx-auto md:mx-0 mb-6 transition-all duration-500 ${event.status === 'current' ? 'bg-mvp-gold shadow-glow-gold scale-150' : event.status === 'past' ? 'bg-white/20' : 'bg-mvp-charcoal border border-white/20'}`}></div>
+                      <div className="font-mono text-mvp-gold text-sm mb-2 opacity-80">{event.date}</div>
+                      <h4 className={`text-lg font-serif mb-2 ${event.status === 'current' ? 'text-white' : 'text-gray-400'}`}>{event.title}</h4>
+                      <p className="text-xs text-gray-500 leading-relaxed max-w-[200px] mx-auto md:mx-0">{event.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="categories" className="py-32 bg-mvp-charcoal relative">
+            <div className="max-w-7xl mx-auto px-6">
+              <SectionTitle title="徵件類別" subtitle="CATEGORIES" />
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {CATEGORIES_DESC.map((cat, idx) => (
+                  <div key={idx} className="group relative bg-white/5 border border-white/5 p-8 hover:bg-white/10 transition-all duration-500 hover:-translate-y-2">
+                    <div className="mb-6 text-mvp-gold opacity-50 group-hover:opacity-100 transition-opacity">{getIcon(cat.icon)}</div>
+                    <h3 className="text-xl font-serif text-white mb-3">{cat.title}</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">{cat.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+      );
+    };
+
+    const ApplyPage = ({ setPage }) => {
+      const [step, setStep] = useState('info');
+      const [openFaq, setOpenFaq] = useState(null);
+      const toggleFaq = (idx) => setOpenFaq(openFaq === idx ? null : idx);
+
+      return (
+        <div className="pt-32 pb-20 min-h-screen bg-mvp-black animate-fade-in">
+          {step === 'info' && (
+            <div className="max-w-7xl mx-auto px-6">
+              <SectionTitle title="參獎權益" subtitle="BENEFITS" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
+                <div className="p-8 bg-white/5 border border-white/5 rounded-xl hover:border-mvp-gold/30 transition-colors group">
+                  <div className="text-4xl font-serif text-mvp-gold mb-4 opacity-50 group-hover:opacity-100">01</div>
+                  <h3 className="text-xl font-bold text-white mb-3">榮耀加冕</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">獲獎者將受邀出席年度頒獎典禮，接受公開表揚，並獲得專屬獎座與證書。</p>
+                </div>
+                <div className="p-8 bg-white/5 border border-white/5 rounded-xl hover:border-mvp-gold/30 transition-colors group">
+                  <div className="text-4xl font-serif text-mvp-gold mb-4 opacity-50 group-hover:opacity-100">02</div>
+                  <h3 className="text-xl font-bold text-white mb-3">媒體曝光</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">獲獎事蹟將刊登於《經理人月刊》專刊及數位平台，提升個人品牌與企業聲譽。</p>
+                </div>
+                <div className="p-8 bg-white/5 border border-white/5 rounded-xl hover:border-mvp-gold/30 transition-colors group">
+                  <div className="text-4xl font-serif text-mvp-gold mb-4 opacity-50 group-hover:opacity-100">03</div>
+                  <h3 className="text-xl font-bold text-white mb-3">社群連結</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">加入 MVP 經理人專屬社群，參與跨界交流活動，與歷屆得主建立深厚連結。</p>
+                </div>
+              </div>
+              <SectionTitle title="報名須知" subtitle="INFORMATION" />
+              <div className="max-w-4xl mx-auto bg-mvp-charcoal border border-white/5 rounded-2xl p-8 md:p-12 mb-24">
+                <div className="flex flex-col md:flex-row gap-12 items-center">
+                  <div className="flex-1 space-y-6">
+                    <h3 className="text-2xl font-bold text-white">準備資料</h3>
+                    <ul className="space-y-4">
+                      <li className="flex items-start gap-3 text-gray-400"><CheckCircle className="text-mvp-gold shrink-0 mt-1" size={18} /><span>基本個人與公司資料</span></li>
+                      <li className="flex items-start gap-3 text-gray-400"><CheckCircle className="text-mvp-gold shrink-0 mt-1" size={18} /><span>一句話績效亮點 (30字內)</span></li>
+                      <li className="flex items-start gap-3 text-gray-400"><CheckCircle className="text-mvp-gold shrink-0 mt-1" size={18} /><span>PDCA 核心事蹟</span></li>
+                    </ul>
+                  </div>
+                  <div className="w-full md:w-auto bg-white/5 p-8 rounded-xl text-center border border-white/10">
+                    <p className="text-gray-400 text-sm mb-2">報名費用</p>
+                    <div className="text-4xl font-serif text-mvp-gold mb-6">NT$ 6,000</div>
+                    <button onClick={() => setStep('payment')} className="w-full bg-mvp-gold hover:bg-yellow-500 text-black font-bold py-3 px-8 rounded-lg transition-colors tracking-widest shadow-glow-gold flex items-center justify-center gap-2">前往繳費 <ArrowRight size={18} /></button>
+                    <button onClick={() => setStep('form')} className="text-xs text-gray-600 underline hover:text-mvp-gold mt-2 transition-colors">(模擬測試) 已繳費，直接填寫資料</button>
+                  </div>
+                </div>
+              </div>
+              <SectionTitle title="常見問題" subtitle="FAQ" />
+              <div className="max-w-3xl mx-auto space-y-4">
+                {FAQ_ITEMS.map((item, idx) => (
+                  <div key={idx} className="border border-white/10 rounded-lg overflow-hidden bg-white/5">
+                    <button onClick={() => toggleFaq(idx)} className="w-full flex justify-between items-center p-6 text-left hover:bg-white/5 transition-colors">
+                      <span className="font-bold text-white">{item.q}</span>
+                      {openFaq === idx ? <ChevronUp className="text-mvp-gold" /> : <ChevronDown className="text-gray-500" />}
+                    </button>
+                    {openFaq === idx && <div className="p-6 pt-0 text-gray-400 text-sm leading-relaxed border-t border-white/5 mt-2">{item.a}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {step === 'payment' && (
+            <div className="max-w-2xl mx-auto px-6 text-center animate-fade-in">
+              <div className="mb-8">
+                <div className="w-20 h-20 bg-mvp-gold/20 rounded-full flex items-center justify-center text-mvp-gold mx-auto mb-6"><CreditCard size={40} /></div>
+                <h2 className="text-3xl font-serif text-white mb-4">繳費確認</h2>
+                <p className="text-gray-400">請確認以下資訊並完成繳費。</p>
+              </div>
+              <div className="bg-mvp-charcoal border border-white/5 rounded-2xl p-8 mb-8 text-left">
+                <div className="flex justify-between items-center mb-4 pb-4 border-b border-white/10"><span className="text-gray-400">項目</span><span className="text-white font-bold">2026 100MVP 經理人報名費</span></div>
+                <div className="flex justify-between items-center mb-4"><span className="text-gray-400">金額</span><span className="text-2xl font-serif text-mvp-gold">NT$ 6,000</span></div>
+              </div>
+              <div className="flex gap-4">
+                <button onClick={() => setStep('info')} className="flex-1 border border-white/20 text-white py-4 rounded-lg hover:bg-white/10 transition-colors">返回</button>
+                <button onClick={() => setStep('form')} className="flex-1 bg-mvp-gold text-black font-bold py-4 rounded-lg hover:bg-yellow-500 transition-colors shadow-glow-gold">確認付款</button>
+              </div>
+            </div>
+          )}
+          {step === 'form' && (
+            <div className="max-w-4xl mx-auto px-6 animate-fade-in">
+              <div className="text-center mb-12">
+                <div className="inline-flex items-center gap-2 text-green-500 bg-green-500/10 px-4 py-2 rounded-full mb-6 border border-green-500/20"><CheckCircle size={16} /><span className="text-sm font-bold">付款成功</span></div>
+                <h2 className="text-4xl font-serif text-white mb-4">填寫報名資料</h2>
+              </div>
+              <div className="bg-mvp-charcoal border border-white/5 rounded-2xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
+                <div className="space-y-12">
+                  <div>
+                    <div className="flex items-center gap-4 mb-8 border-b border-white/10 pb-4"><div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-mvp-gold font-bold">01</div><h3 className="text-xl font-serif text-white">基本資料</h3></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2"><label className="text-xs text-gray-400 uppercase tracking-wider">姓名 <span className="text-red-500">*</span></label><input type="text" className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-mvp-gold transition-colors" placeholder="請輸入姓名" /></div>
+                      <div className="space-y-2"><label className="text-xs text-gray-400 uppercase tracking-wider">聯絡電話 <span className="text-red-500">*</span></label><input type="tel" className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-mvp-gold transition-colors" placeholder="請輸入聯絡電話" /></div>
+                      <div className="space-y-2 md:col-span-2"><label className="text-xs text-gray-400 uppercase tracking-wider">Email <span className="text-red-500">*</span></label><input type="email" className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-mvp-gold transition-colors" placeholder="請輸入 Email" /></div>
+                    </div>
+                  </div>
+                  <div className="pt-6"><button type="button" className="w-full bg-mvp-gold hover:bg-yellow-500 text-black font-bold py-4 rounded-lg transition-colors tracking-widest shadow-glow-gold">確認送出申請</button></div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const AboutPage = () => (
+      <div className="pt-32 pb-20 min-h-screen bg-mvp-black animate-fade-in">
+        <section className="max-w-7xl mx-auto px-6 mb-32">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+            <div>
+              <h2 className="text-4xl md:text-6xl font-serif text-white mb-8 leading-tight">關於 <br /><span className="text-mvp-gold">100 MVP 經理人</span></h2>
+              <div className="space-y-6 text-gray-400 leading-relaxed font-light">
+                <p>自 2008 年起，《經理人月刊》每年舉辦「100 MVP 經理人」選拔，從各行各業中挖掘出 100 位在該年度展現卓越績效的專業經理人。</p>
+                <p>MVP 代表的不僅是 Most Valuable Player，更是 Manager, Visionary, Professional。</p>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-mvp-gold/10 transform translate-x-4 translate-y-4 border border-mvp-gold/20"></div>
+              <img src="https://picsum.photos/800/600?grayscale" alt="About 100 MVP" className="relative z-10 w-full h-auto grayscale hover:grayscale-0 transition-all duration-700 shadow-2xl" />
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+
+    const HallOfFamePage = () => {
+      const [selectedYear, setSelectedYear] = useState(2025);
+      const [searchTerm, setSearchTerm] = useState('');
+      const [selectedManager, setSelectedManager] = useState(null);
+
+      const years = useMemo(() => Array.from(new Set(MOCK_MANAGERS.map(m => m.year))).sort((a, b) => b - a).filter(y => y < 2026), []);
+      const filteredManagers = useMemo(() => MOCK_MANAGERS.filter(m => m.year === selectedYear && (m.name.includes(searchTerm) || m.company.includes(searchTerm))), [selectedYear, searchTerm]);
+      const managersByCategory = useMemo(() => {
+        const grouped = {};
+        CATEGORIES_DESC.forEach(cat => grouped[cat.type] = filteredManagers.filter(m => m.category === cat.type));
+        return grouped;
+      }, [filteredManagers]);
+
+      return (
+        <div className="min-h-screen bg-mvp-black pt-24 pb-20">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-16"><h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4">歷屆得主</h1></div>
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12 sticky top-20 z-30 bg-mvp-black/95 backdrop-blur py-4 border-b border-white/10">
+              <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar">
+                {years.map(year => (
+                  <button key={year} onClick={() => setSelectedYear(year)} className={`px-6 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${selectedYear === year ? 'bg-mvp-gold text-black shadow-glow-gold' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'}`}>{year} MVP</button>
+                ))}
+              </div>
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <input type="text" placeholder="搜尋姓名、公司..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-mvp-gold transition-colors" />
+              </div>
+            </div>
+            <div className="space-y-16">
+              {CATEGORIES_DESC.map(category => {
+                const managers = managersByCategory[category.type];
+                if (!managers || managers.length === 0) return null;
+                return (
+                  <div key={category.type} className="animate-fade-in">
+                    <div className="flex items-center gap-4 mb-8"><div className="h-8 w-1 bg-mvp-gold rounded-full"></div><h2 className="text-2xl font-bold text-white">{category.title}</h2></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {managers.map(manager => (
+                        <div key={manager.id} onClick={() => setSelectedManager(manager)} className="group bg-white/5 border border-white/10 p-5 rounded-xl cursor-pointer hover:bg-white/10 hover:border-mvp-gold/50 transition-all duration-300 relative overflow-hidden">
+                          <div className="flex justify-between items-start mb-3"><h3 className="text-xl font-bold text-white group-hover:text-mvp-gold transition-colors">{manager.name}</h3></div>
+                          <div className="space-y-1"><p className="text-sm text-gray-300 font-medium truncate">{manager.company}</p><p className="text-xs text-gray-500 truncate">{manager.title}</p></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {selectedManager && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedManager(null)}></div>
+              <div className="relative bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-up p-8">
+                <button onClick={() => setSelectedManager(null)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-colors z-10"><X className="w-5 h-5" /></button>
+                <h2 className="text-3xl font-bold text-white mb-2">{selectedManager.name}</h2>
+                <p className="text-gray-300 leading-relaxed">{selectedManager.shortPerformance}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const AdminPage = () => (
+      <div className="pt-32 pb-20 min-h-screen bg-mvp-black animate-fade-in">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex justify-between items-center mb-12"><h2 className="text-3xl font-serif text-white">後台管理系統</h2></div>
+          <div className="bg-mvp-charcoal border border-white/5 rounded-xl overflow-hidden shadow-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/10">
+                    <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">ID</th>
+                    <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">姓名</th>
+                    <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">公司/職稱</th>
+                    <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">繳費狀態</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {MOCK_MANAGERS.filter(m => m.year === 2026).map(manager => (
+                    <tr key={manager.id} className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 text-gray-500 font-mono">#{manager.id}</td>
+                      <td className="p-4 text-white font-medium">{manager.name}</td>
+                      <td className="p-4 text-gray-400"><div className="text-white">{manager.company}</div><div className="text-xs">{manager.title}</div></td>
+                      <td className="p-4">{manager.paid ? <span className="text-green-500 text-xs font-bold">已繳費</span> : <span className="text-red-500 text-xs font-bold">未繳費</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const App = () => {
+      const [activePage, setActivePage] = useState('home');
+
+      useEffect(() => {
+        const handleHashChange = () => {
+          const hash = window.location.hash.replace('#', '');
+          if (['home', 'apply', 'about', 'hall', 'admin'].includes(hash)) {
+            setActivePage(hash);
+          } else {
+            setActivePage('home');
+          }
+        };
+        handleHashChange();
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+      }, []);
+
+      const setPage = (page) => {
+        setActivePage(page);
+        window.location.hash = page;
+      };
+
+      const renderPage = () => {
+        switch (activePage) {
+          case 'home': return <HomePage setPage={setPage} />;
+          case 'apply': return <ApplyPage setPage={setPage} />;
+          case 'about': return <AboutPage />;
+          case 'hall': return <HallOfFamePage />;
+          case 'admin': return <AdminPage />;
+          default: return <HomePage setPage={setPage} />;
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-mvp-black text-white font-sans selection:bg-mvp-gold selection:text-black flex flex-col">
+          <Navbar activePage={activePage} setPage={setPage} />
+          <main className="flex-grow">{renderPage()}</main>
+          <Footer />
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
